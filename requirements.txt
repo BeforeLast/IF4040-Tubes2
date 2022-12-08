@@ -1,3 +1,4 @@
-"pymongo[srv]"
+pymongo[srv]
 python-dateutil
 python-dotenv
+pandas
