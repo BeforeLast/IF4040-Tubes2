@@ -1,4 +1,5 @@
 import psycopg2
+import pandas as pd
 from time import perf_counter
 
 # CONSTANTS
@@ -46,7 +47,7 @@ if __name__ == "__main__":
         # Commit creation
         conn.commit()
 
-        # Inserting data
+        # Inserting movies data
         cur.execute(f'''
         COPY movies(movieId, title, genres)
         FROM '{MOVIES_TABLE}'
@@ -54,13 +55,16 @@ if __name__ == "__main__":
         CSV HEADER;
         ''')
 
+        # Generating ratings query
+        df = pd.read_csv(RATINGS_TABLE)
+        df_list = [tuple(row) for row in df.values.tolist()]
+
+        # Inserting ratings data
         write_clock_start = perf_counter()
-        cur.execute(f'''
-        COPY ratings(userId,movieId,rating,timestamp)
-        FROM '{RATINGS_TABLE}'
-        DELIMITER ','
-        CSV HEADER;
-        ''')
+        cur.executemany(f'''
+        INSERT INTO ratings
+        VALUES(%s, %s, %s, %s);
+        ''', df_list)
         write_clock_end = perf_counter()
         print(f'WRITE 10.000 DATA EXECUTION TIME: {write_clock_end - write_clock_start} seconds')
 
